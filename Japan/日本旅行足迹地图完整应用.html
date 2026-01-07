@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本旅行足迹地图 - 送给朋友的礼物</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        h1:after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, #e74c3c, #e67e22);
+            border-radius: 2px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        @media (min-width: 992px) {
+            .app-container {
+                flex-direction: row;
+            }
+        }
+        
+        .map-container {
+            flex: 1;
+            min-height: 500px;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            z-index: 1;
+            background: #eaf2f8;
+        }
+        
+        .sidebar {
+            width: 100%;
+            background: #f8f9fa;
+            padding: 25px;
+            border-left: 1px solid #eee;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+        
+        @media (min-width: 992px) {
+            .sidebar {
+                width: 350px;
+            }
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 25px;
+        }
+        
+        .instructions h3 {
+            color: #0d47a1;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            background: #3498db;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        button.secondary {
+            background: #95a5a6;
+        }
+        
+        button.secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        button.success {
+            background: #2ecc71;
+        }
+        
+        button.success:hover {
+            background: #27ae60;
+        }
+        
+        .visited-list {
+            margin-top: 25px;
+        }
+        
+        .visited-list h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .prefecture-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #3498db;
+            transition: transform 0.3s ease;
+        }
+        
+        .prefecture-card:hover {
+            transform: translateX(5px);
+        }
+        
+        .prefecture-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .prefecture-name {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+        
+        .prefecture-code {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            background: #f1f2f6;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+        
+        .prefecture-photo {
+            width: 100%;
+            height: 150px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin: 10px 0;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #95a5a6;
+        }
+        
+        .prefecture-note {
+            font-style: italic;
+            color: #555;
+            line-height: 1.5;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #eee;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            font-size: 14px;
+        }
+        
+        .legend h4 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0 20px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .gift-note {
+            color: #e74c3c;
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 1rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #95a5a6;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .photo-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 15px;
+            padding: 30px;
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .color-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .color-option.selected {
+            border-color: #2c3e50;
+            transform: scale(1.1);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            background: #2ecc71;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            z-index: 3000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background: #e74c3c;
+        }
+        
+        .prefecture-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .map-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #3498db;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-map-marked-alt"></i> 日本旅行足迹地图</h1>
+            <p class="subtitle">点亮你去过的日本都道府县，记录美好回忆，送给朋友的特别礼物</p>
+        </header>
+        
+        <div class="app-container">
+            <div class="map-container">
+                <div id="map">
+                    <div class="map-loading">
+                        <i class="fas fa-spinner fa-spin"></i> 正在加载地图...
+                    </div>
+                </div>
+                <div class="legend">
+                    <h4>图例</h4>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #bdc3c7;"></div>
+                        <span>未访问</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #3498db;"></div>
+                        <span>已访问</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="instructions">
+                    <h3><i class="fas fa-info-circle"></i> 使用说明</h3>
+                    <ul>
+                        <li>点击地图上的都道府县区域进行点亮</li>
+                        <li>在侧边栏管理已访问的都道府县</li>
+                        <li>为每个都道府县添加照片和旅行笔记</li>
+                        <li>每个都道府县都有独特颜色，点亮后从灰色变为彩色</li>
+                        <li>数据保存在浏览器本地，可随时导出</li>
+                    </ul>
+                </div>
+                
+                <div class="prefecture-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="visitedCount">0</div>
+                        <div class="stat-label">已访问</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalCount">47</div>
+                        <div class="stat-label">总计</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="percentage">0%</div>
+                        <div class="stat-label">完成度</div>
+                    </div>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                
+                <div class="controls">
+                    <button id="resetBtn"><i class="fas fa-trash-alt"></i> 重置地图</button>
+                    <button id="exportBtn" class="secondary"><i class="fas fa-download"></i> 导出数据</button>
+                    <button id="importBtn" class="secondary"><i class="fas fa-upload"></i> 导入数据</button>
+                </div>
+                
+                <div class="visited-list">
+                    <h3><i class="fas fa-flag"></i> 已访问都道府县</h3>
+                    <div id="visitedPrefectures">
+                        <div class="empty-state">
+                            <i class="fas fa-mountain"></i>
+                            <p>您还没有点亮任何都道府县<br>点击地图上的区域开始记录旅程</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>日本旅行足迹地图 &copy; 2023 | 送给朋友的特别礼物</p>
+            <p class="gift-note">❤️ 希望你喜欢这份记录旅行的礼物！ ❤️</p>
+        </footer>
+    </div>
+    
+    <!-- Modal for adding/editing prefecture info -->
+    <div class="modal" id="prefectureModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="modalTitle">添加都道府县信息</h2>
+            
+            <div class="form-group">
+                <label for="prefectureName">都道府县名称</label>
+                <input type="text" id="prefectureName" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="prefectureCode">都道府县代码</label>
+                <input type="text" id="prefectureCode" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="visitDate">访问日期</label>
+                <input type="date" id="visitDate">
+            </div>
+            
+            <div class="form-group">
+                <label>标记颜色</label>
+                <div class="color-options">
+                    <div class="color-option selected" style="background-color: #3498db;" data-color="#3498db"></div>
+                    <div class="color-option" style="background-color: #e74c3c;" data-color="#e74c3c"></div>
+                    <div class="color-option" style="background-color: #2ecc71;" data-color="#2ecc71"></div>
+                    <div class="color-option" style="background-color: #f39c12;" data-color="#f39c12"></div>
+                    <div class="color-option" style="background-color: #9b59b6;" data-color="#9b59b6"></div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="photoUpload">上传照片</label>
+                <input type="file" id="photoUpload" accept="image/*">
+                <img id="photoPreview" class="photo-preview" alt="照片预览">
+            </div>
+            
+            <div class="form-group">
+                <label for="travelNote">旅行笔记</label>
+                <textarea id="travelNote" placeholder="分享你的旅行故事..."></textarea>
+            </div>
+            
+            <button id="savePrefectureBtn" class="success"><i class="fas fa-save"></i> 保存信息</button>
+        </div>
+    </div>
+    
+    <!-- Notification -->
+    <div class="notification" id="notification">操作成功！</div>
+    
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // 日本都道府县数据
+        const japanPrefectures = [
+            {code: "01", name: "北海道", name_en: "Hokkaido", color: "#FF6B6B"},
+            {code: "02", name: "青森县", name_en: "Aomori", color: "#4ECDC4"},
+            {code: "03", name: "岩手县", name_en: "Iwate", color: "#45B7D1"},
+            {code: "04", name: "宫城县", name_en: "Miyagi", color: "#96CEB4"},
+            {code: "05", name: "秋田县", name_en: "Akita", color: "#FFEAA7"},
+            {code: "06", name: "山形县", name_en: "Yamagata", color: "#DDA0DD"},
+            {code: "07", name: "福岛县", name_en: "Fukushima", color: "#98D8C8"},
+            {code: "08", name: "茨城县", name_en: "Ibaraki", color: "#F7DC6F"},
+            {code: "09", name: "栃木县", name_en: "Tochigi", color: "#BB8FCE"},
+            {code: "10", name: "群马县", name_en: "Gunma", color: "#85C1E9"},
+            {code: "11", name: "埼玉县", name_en: "Saitama", color: "#F8C471"},
+            {code: "12", name: "千叶县", name_en: "Chiba", color: "#82E0AA"},
+            {code: "13", name: "东京都", name_en: "Tokyo", color: "#F1948A"},
+            {code: "14", name: "神奈川县", name_en: "Kanagawa", color: "#7FB3D5"},
+            {code: "15", name: "新潟县", name_en: "Niigata", color: "#76D7C4"},
+            {code: "16", name: "富山县", name_en: "Toyama", color: "#F7DC6F"},
+            {code: "17", name: "石川县", name_en: "Ishikawa", color: "#D2B4DE"},
+            {code: "18", name: "福井县", name_en: "Fukui", color: "#A9CCE3"},
+            {code: "19", name: "山梨县", name_en: "Yamanashi", color: "#ABEBC6"},
+            {code: "20", name: "长野县", name_en: "Nagano", color: "#F9E79F"},
+            {code: "21", name: "岐阜县", name_en: "Gifu", color: "#D5DBDB"},
+            {code: "22", name: "静冈县", name_en: "Shizuoka", color: "#F5B7B1"},
+            {code: "23", name: "爱知县", name_en: "Aichi", color: "#AED6F1"},
+            {code: "24", name: "三重县", name_en: "Mie", color: "#D7BDE2"},
+            {code: "25", name: "滋贺县", name_en: "Shiga", color: "#A3E4D7"},
+            {code: "26", name: "京都府", name_en: "Kyoto", color: "#F8C471"},
+            {code: "27", name: "大阪府", name_en: "Osaka", color: "#F1948A"},
+            {code: "28", name: "兵库县", name_en: "Hyogo", color: "#85C1E9"},
+            {code: "29", name: "奈良县", name_en: "Nara", color: "#ABEBC6"},
+            {code: "30", name: "和歌山县", name_en: "Wakayama", color: "#F7DC6F"},
+            {code: "31", name: "鸟取县", name_en: "Tottori", color: "#D5DBDB"},
+            {code: "32", name: "岛根县", name_en: "Shimane", color: "#F5B7B1"},
+            {code: "33", name: "冈山县", name_en: "Okayama", color: "#AED6F1"},
+            {code: "34", name: "广岛县", name_en: "Hiroshima", color: "#D7BDE2"},
+            {code: "35", name: "山口县", name_en: "Yamaguchi", color: "#A3E4D7"},
+            {code: "36", name: "德岛县", name_en: "Tokushima", color: "#F8C471"},
+            {code: "37", name: "香川县", name_en: "Kagawa", color: "#F1948A"},
+            {code: "38", name: "爱媛县", name_en: "Ehime", color: "#85C1E9"},
+            {code: "39", name: "高知县", name_en: "Kochi", color: "#ABEBC6"},
+            {code: "40", name: "福冈县", name_en: "Fukuoka", color: "#F7DC6F"},
+            {code: "41", name: "佐贺县", name_en: "Saga", color: "#D5DBDB"},
+            {code: "42", name: "长崎县", name_en: "Nagasaki", color: "#F5B7B1"},
+            {code: "43", name: "熊本县", name_en: "Kumamoto", color: "#AED6F1"},
+            {code: "44", name: "大分县", name_en: "Oita", color: "#D7BDE2"},
+            {code: "45", name: "宫崎县", name_en: "Miyazaki", color: "#A3E4D7"},
+            {code: "46", name: "鹿儿岛县", name_en: "Kagoshima", color: "#F8C471"},
+            {code: "47", name: "冲绳县", name_en: "Okinawa", color: "#F1948A"}
+        ];
+        
+        // 日本都道府县边界数据（简化的多边形）
+        const japanPrefectureBoundaries = {
+            "type": "FeatureCollection",
+            "features": [
+                // 北海道
+                {
+                    "type": "Feature",
+                    "properties": {"code": "01", "name": "北海道"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [139.8, 41.4], [145.8, 43.5], [145.0, 45.5], [141.0, 45.5], 
+                            [139.8, 41.4]
+                        ]]
+                    }
+                },
+                // 东北地区
+                {
+                    "type": "Feature",
+                    "properties": {"code": "02", "name": "青森县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [140.2, 40.8], [141.2, 40.8], [141.2, 41.5], [140.2, 41.5], 
+                            [140.2, 40.8]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "03", "name": "岩手县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [140.9, 38.9], [141.9, 38.9], [141.9, 40.4], [140.9, 40.4], 
+                            [140.9, 38.9]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "04", "name": "宫城县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [140.4, 37.7], [141.4, 37.7], [141.4, 38.8], [140.4, 38.8], 
+                            [140.4, 37.7]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "05", "name": "秋田县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [139.7, 39.2], [140.7, 39.2], [140.7, 40.5], [139.7, 40.5], 
+                            [139.7, 39.2]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "06", "name": "山形县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [139.5, 37.8], [140.5, 37.8], [140.5, 39.0], [139.5, 39.0], 
+                            [139.5, 37.8]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "07", "name": "福岛县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [139.5, 36.9], [140.5, 36.9], [140.5, 38.0], [139.5, 38.0], 
+                            [139.5, 36.9]
+                        ]]
+                    }
+                },
+                // 关东地区
+                {
+                    "type": "Feature",
+                    "properties": {"code": "08", "name": "茨城县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [139.8, 35.8], [140.8, 35.8], [140.8, 36.8], [139.8, 36.8], 
+                            [139.8, 35.8]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "09", "name": "栃木县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [139.4, 36.3], [140.4, 36.3], [140.4, 37.3], [139.4, 37.3], 
+                            [139.4, 36.3]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "10", "name": "群马县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [138.4, 36.0], [139.4, 36.0], [139.4, 37.0], [138.4, 37.0], 
+                            [138.4, 36.0]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "11", "name": "埼玉县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [138.8, 35.7], [139.8, 35.7], [139.8, 36.5], [138.8, 36.5], 
+                            [138.8, 35.7]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "12", "name": "千叶县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [139.8, 35.0], [140.8, 35.0], [140.8, 36.0], [139.8, 36.0], 
+                            [139.8, 35.0]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "13", "name": "东京都"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [138.9, 35.4], [139.9, 35.4], [139.9, 36.4], [138.9, 36.4], 
+                            [138.9, 35.4]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "14", "name": "神奈川县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [138.9, 35.1], [139.9, 35.1], [139.9, 35.8], [138.9, 35.8], 
+                            [138.9, 35.1]
+                        ]]
+                    }
+                },
+                // 中部地区
+                {
+                    "type": "Feature",
+                    "properties": {"code": "15", "name": "新潟县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [137.8, 36.8], [139.8, 36.8], [139.8, 38.5], [137.8, 38.5], 
+                            [137.8, 36.8]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "16", "name": "富山县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [136.9, 36.3], [137.9, 36.3], [137.9, 37.3], [136.9, 37.3], 
+                            [136.9, 36.3]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "17", "name": "石川县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [136.2, 36.2], [137.2, 36.2], [137.2, 37.2], [136.2, 37.2], 
+                            [136.2, 36.2]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "18", "name": "福井县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [135.5, 35.5], [136.5, 35.5], [136.5, 36.5], [135.5, 36.5], 
+                            [135.5, 35.5]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "19", "name": "山梨县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [138.2, 35.2], [139.2, 35.2], [139.2, 36.2], [138.2, 36.2], 
+                            [138.2, 35.2]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "20", "name": "长野县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [137.5, 35.2], [138.5, 35.2], [138.5, 36.8], [137.5, 36.8], 
+                            [137.5, 35.2]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "21", "name": "岐阜县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [136.5, 35.2], [137.5, 35.2], [137.5, 36.5], [136.5, 36.5], 
+                            [136.5, 35.2]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "22", "name": "静冈县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [137.8, 34.5], [139.0, 34.5], [139.0, 35.5], [137.8, 35.5], 
+                            [137.8, 34.5]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "23", "name": "爱知县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [136.5, 34.5], [137.5, 34.5], [137.5, 35.5], [136.5, 35.5], 
+                            [136.5, 34.5]
+                        ]]
+                    }
+                },
+                // 近畿地区
+                {
+                    "type": "Feature",
+                    "properties": {"code": "24", "name": "三重县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [135.8, 33.8], [136.8, 33.8], [136.8, 35.0], [135.8, 35.0], 
+                            [135.8, 33.8]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "25", "name": "滋贺县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [135.8, 34.8], [136.3, 34.8], [136.3, 35.5], [135.8, 35.5], 
+                            [135.8, 34.8]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "26", "name": "京都府"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [135.2, 34.8], [136.0, 34.8], [136.0, 35.8], [135.2, 35.8], 
+                            [135.2, 34.8]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "27", "name": "大阪府"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [135.2, 34.4], [135.7, 34.4], [135.7, 34.9], [135.2, 34.9], 
+                            [135.2, 34.4]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "28", "name": "兵库县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [134.5, 34.5], [135.5, 34.5], [135.5, 35.5], [134.5, 35.5], 
+                            [134.5, 34.5]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "29", "name": "奈良县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [135.6, 34.0], [136.1, 34.0], [136.1, 34.8], [135.6, 34.8], 
+                            [135.6, 34.0]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "30", "name": "和歌山县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [135.0, 33.5], [136.0, 33.5], [136.0, 34.5], [135.0, 34.5], 
+                            [135.0, 33.5]
+                        ]]
+                    }
+                },
+                // 中国地区
+                {
+                    "type": "Feature",
+                    "properties": {"code": "31", "name": "鸟取县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [133.5, 35.0], [134.5, 35.0], [134.5, 35.8], [133.5, 35.8], 
+                            [133.5, 35.0]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "32", "name": "岛根县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [132.0, 34.5], [133.5, 34.5], [133.5, 35.5], [132.0, 35.5], 
+                            [132.0, 34.5]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "33", "name": "冈山县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [133.5, 34.2], [134.5, 34.2], [134.5, 35.2], [133.5, 35.2], 
+                            [133.5, 34.2]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "34", "name": "广岛县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [132.0, 34.0], [133.5, 34.0], [133.5, 35.0], [132.0, 35.0], 
+                            [132.0, 34.0]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "35", "name": "山口县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [130.8, 33.8], [132.0, 33.8], [132.0, 34.8], [130.8, 34.8], 
+                            [130.8, 33.8]
+                        ]]
+                    }
+                },
+                // 四国地区
+                {
+                    "type": "Feature",
+                    "properties": {"code": "36", "name": "德岛县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [133.8, 33.5], [134.8, 33.5], [134.8, 34.2], [133.8, 34.2], 
+                            [133.8, 33.5]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "37", "name": "香川县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [133.5, 34.0], [134.3, 34.0], [134.3, 34.5], [133.5, 34.5], 
+                            [133.5, 34.0]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "38", "name": "爱媛县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [132.0, 32.8], [133.5, 32.8], [133.5, 34.0], [132.0, 34.0], 
+                            [132.0, 32.8]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "39", "name": "高知县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [132.5, 32.8], [134.0, 32.8], [134.0, 33.8], [132.5, 33.8], 
+                            [132.5, 32.8]
+                        ]]
+                    }
+                },
+                // 九州地区
+                {
+                    "type": "Feature",
+                    "properties": {"code": "40", "name": "福冈县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [130.0, 33.0], [131.0, 33.0], [131.0, 34.0], [130.0, 34.0], 
+                            [130.0, 33.0]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "41", "name": "佐贺县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [129.8, 33.0], [130.5, 33.0], [130.5, 33.5], [129.8, 33.5], 
+                            [129.8, 33.0]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "42", "name": "长崎县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [128.5, 32.5], [130.5, 32.5], [130.5, 34.5], [128.5, 34.5], 
+                            [128.5, 32.5]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "43", "name": "熊本县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [130.0, 32.0], [131.5, 32.0], [131.5, 33.5], [130.0, 33.5], 
+                            [130.0, 32.0]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "44", "name": "大分县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [130.8, 32.8], [132.0, 32.8], [132.0, 34.0], [130.8, 34.0], 
+                            [130.8, 32.8]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "45", "name": "宫崎县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [130.8, 31.5], [131.8, 31.5], [131.8, 32.8], [130.8, 32.8], 
+                            [130.8, 31.5]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {"code": "46", "name": "鹿儿岛县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [129.5, 30.5], [131.5, 30.5], [131.5, 32.0], [129.5, 32.0], 
+                            [129.5, 30.5]
+                        ]]
+                    }
+                },
+                // 冲绳县
+                {
+                    "type": "Feature",
+                    "properties": {"code": "47", "name": "冲绳县"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [127.0, 26.0], [128.5, 26.0], [128.5, 27.0], [127.0, 27.0], 
+                            [127.0, 26.0]
+                        ]]
+                    }
+                }
+            ]
+        };
+        
+        // 数据存储管理类
+        class StorageManager {
+            constructor() {
+                this.visitedKey = 'visitedPrefectures';
+                this.settingsKey = 'mapSettings';
+            }
+            
+            getVisitedPrefectures() {
+                const data = localStorage.getItem(this.visitedKey);
+                return data ? JSON.parse(data) : [];
+            }
+            
+            saveVisitedPrefectures(data) {
+                localStorage.setItem(this.visitedKey, JSON.stringify(data));
+            }
+            
+            savePrefecture(prefecture) {
+                let visited = this.getVisitedPrefectures();
+                const index = visited.findIndex(p => p.code === prefecture.code);
+                
+                if (index >= 0) {
+                    visited[index] = { ...visited[index], ...prefecture };
+                } else {
+                    visited.push(prefecture);
+                }
+                
+                this.saveVisitedPrefectures(visited);
+                return visited;
+            }
+            
+            deletePrefecture(code) {
+                let visited = this.getVisitedPrefectures();
+                visited = visited.filter(p => p.code !== code);
+                this.saveVisitedPrefectures(visited);
+                return visited;
+            }
+            
+            exportData() {
+                const data = this.getVisitedPrefectures();
+                return JSON.stringify(data, null, 2);
+            }
+            
+            importData(jsonString) {
+                try {
+                    const data = JSON.parse(jsonString);
+                    if (Array.isArray(data)) {
+                        this.saveVisitedPrefectures(data);
+                        return { success: true, count: data.length };
+                    } else {
+                        return { success: false, error: '数据格式错误：应为数组' };
+                    }
+                } catch (error) {
+                    return { success: false, error: 'JSON解析错误：' + error.message };
+                }
+            }
+            
+            resetData() {
+                localStorage.removeItem(this.visitedKey);
+                return [];
+            }
+            
+            getStats() {
+                const visited = this.getVisitedPrefectures();
+                const total = 47;
+                const visitedCount = visited.length;
+                const percentage = Math.round((visitedCount / total) * 100);
+                
+                return {
+                    visited: visitedCount,
+                    total: total,
+                    percentage: percentage
+                };
+            }
+            
+            getMapSettings() {
+                const settings = localStorage.getItem(this.settingsKey);
+                return settings ? JSON.parse(settings) : {
+                    zoom: 5,
+                    center: [36.2048, 138.2529],
+                    theme: 'light'
+                };
+            }
+            
+            saveMapSettings(settings) {
+                localStorage.setItem(this.settingsKey, JSON.stringify(settings));
+            }
+        }
+        
+        // 文件操作工具
+        class FileManager {
+            static exportToFile(data, filename = '日本旅行足迹.json') {
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                URL.revokeObjectURL(url);
+            }
+            
+            static importFromFile(file, callback) {
+                if (!file) {
+                    callback({ success: false, error: '未选择文件' });
+                    return;
+                }
+                
+                if (!file.name.endsWith('.json')) {
+                    callback({ success: false, error: '请选择JSON文件' });
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    callback({ success: true, data: event.target.result });
+                };
+                reader.onerror = function() {
+                    callback({ success: false, error: '文件读取失败' });
+                };
+                reader.readAsText(file);
+            }
+            
+            static imageToBase64(file, callback) {
+                if (!file || !file.type.startsWith('image/')) {
+                    callback({ success: false, error: '请选择图片文件' });
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    callback({ success: true, data: event.target.result });
+                };
+                reader.onerror = function() {
+                    callback({ success: false, error: '图片读取失败' });
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // 创建全局存储管理器实例
+        const storageManager = new StorageManager();
+        
+        // 主应用程序类
+        class JapanTravelMap {
+            constructor() {
+                this.map = null;
+                this.prefectureLayers = {};
+                this.currentPrefecture = null;
+                this.init();
+            }
+            
+            init() {
+                this.initializeMap();
+                this.setupEventListeners();
+                this.createPrefectureLayers();
+                this.updateUI();
+            }
+            
+            initializeMap() {
+                this.map = L.map('map', {
+                    minZoom: 5,
+                    maxZoom: 9,
+                    maxBounds: [
+                        [24.0, 122.0],
+                        [46.0, 146.0]
+                    ],
+                    maxBoundsViscosity: 1.0
+                }).setView([36.2048, 138.2529], 5);
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 9,
+                    minZoom: 5
+                }).addTo(this.map);
+                
+                document.querySelector('.map-loading').style.display = 'none';
+            }
+            
+            createPrefectureLayers() {
+                const visitedPrefectures = storageManager.getVisitedPrefectures();
+                
+                japanPrefectureBoundaries.features.forEach(feature => {
+                    const prefCode = feature.properties.code;
+                    const prefName = feature.properties.name;
+                    const prefData = japanPrefectures.find(p => p.code === prefCode);
+                    
+                    if (!prefData) return;
+                    
+                    const visitedPref = visitedPrefectures.find(vp => vp.code === prefCode);
+                    
+                    const polygon = L.polygon(feature.geometry.coordinates, {
+                        color: visitedPref ? (visitedPref.color || prefData.color) : "#bdc3c7",
+                        fillColor: visitedPref ? (visitedPref.color || prefData.color) : "#bdc3c7",
+                        fillOpacity: 0.7,
+                        weight: 1
+                    }).addTo(this.map);
+                    
+                    polygon.on('click', () => {
+                        this.openPrefectureModal(prefData);
+                    });
+                    
+                    polygon.on('mouseover', function() {
+                        this.setStyle({
+                            weight: 2,
+                            fillOpacity: 0.9
+                        });
+                    });
+                    
+                    polygon.on('mouseout', function() {
+                        const visited = visitedPrefectures.find(vp => vp.code === prefCode);
+                        const defaultColor = japanPrefectures.find(p => p.code === prefCode)?.color || "#bdc3c7";
+                        this.setStyle({
+                            weight: 1,
+                            fillOpacity: 0.7,
+                            fillColor: visited ? (visited.color || defaultColor) : "#bdc3c7",
+                            color: visited ? (visited.color || defaultColor) : "#bdc3c7"
+                        });
+                    });
+                    
+                    polygon.bindTooltip(`<b>${prefName}</b>`, { permanent: false, direction: 'top' });
+                    
+                    this.prefectureLayers[prefCode] = polygon;
+                });
+            }
+            
+            openPrefectureModal(prefecture) {
+                this.currentPrefecture = prefecture;
+                const modal = document.getElementById('prefectureModal');
+                const existingPrefecture = storageManager.getVisitedPrefectures()
+                    .find(vp => vp.code === prefecture.code);
+                
+                document.getElementById('prefectureName').value = prefecture.name;
+                document.getElementById('prefectureCode').value = prefecture.code;
+                
+                if (existingPrefecture) {
+                    document.getElementById('modalTitle').textContent = "编辑都道府县信息";
+                    document.getElementById('visitDate').value = existingPrefecture.date || '';
+                    document.getElementById('travelNote').value = existingPrefecture.note || '';
+                    
+                    const photoPreview = document.getElementById('photoPreview');
+                    if (existingPrefecture.photo) {
+                        photoPreview.src = existingPrefecture.photo;
+                        photoPreview.style.display = 'block';
+                    } else {
+                        photoPreview.style.display = 'none';
+                    }
+                    
+                    document.querySelectorAll('.color-option').forEach(option => {
+                        option.classList.remove('selected');
+                        if (option.dataset.color === existingPrefecture.color) {
+                            option.classList.add('selected');
+                        }
+                    });
+                } else {
+                    document.getElementById('modalTitle').textContent = "添加都道府县信息";
+                    document.getElementById('visitDate').value = '';
+                    document.getElementById('travelNote').value = '';
+                    document.getElementById('photoPreview').style.display = 'none';
+                    
+                    document.querySelectorAll('.color-option').forEach((option, index) => {
+                        option.classList.remove('selected');
+                        if (index === 0) option.classList.add('selected');
+                    });
+                }
+                
+                modal.style.display = 'flex';
+            }
+            
+            savePrefectureInfo() {
+                if (!this.currentPrefecture) return;
+                
+                const selectedColor = document.querySelector('.color-option.selected').dataset.color;
+                const visitDate = document.getElementById('visitDate').value;
+                const travelNote = document.getElementById('travelNote').value;
+                const photoFile = document.getElementById('photoUpload').files[0];
+                
+                const prefectureData = {
+                    code: this.currentPrefecture.code,
+                    name: this.currentPrefecture.name,
+                    name_en: this.currentPrefecture.name_en,
+                    date: visitDate,
+                    note: travelNote,
+                    color: selectedColor,
+                    photo: null
+                };
+                
+                if (photoFile) {
+                    FileManager.imageToBase64(photoFile, (result) => {
+                        if (result.success) {
+                            prefectureData.photo = result.data;
+                            this.finalizeSave(prefectureData);
+                        } else {
+                            this.showNotification(result.error, 'error');
+                        }
+                    });
+                } else {
+                    this.finalizeSave(prefectureData);
+                }
+            }
+            
+            finalizeSave(prefectureData) {
+                const updatedData = storageManager.savePrefecture(prefectureData);
+                
+                this.updatePrefectureColor(prefectureData.code, prefectureData.color);
+                
+                this.updateUI();
+                
+                this.closeModal();
+                
+                const isUpdate = storageManager.getVisitedPrefectures()
+                    .some(p => p.code === prefectureData.code);
+                this.showNotification(`已${isUpdate ? '更新' : '添加'} ${prefectureData.name} 的信息`);
+                
+                document.getElementById('photoUpload').value = '';
+            }
+            
+            updatePrefectureColor(code, color) {
+                if (this.prefectureLayers[code]) {
+                    this.prefectureLayers[code].setStyle({
+                        fillColor: color,
+                        color: color
+                    });
+                }
+            }
+            
+            updateUI() {
+                this.updateVisitedList();
+                this.updateStats();
+            }
+            
+            updateVisitedList() {
+                const container = document.getElementById('visitedPrefectures');
+                const visitedPrefectures = storageManager.getVisitedPrefectures();
+                
+                if (visitedPrefectures.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-mountain"></i>
+                            <p>您还没有点亮任何都道府县<br>点击地图上的区域开始记录旅程</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = '';
+                
+                visitedPrefectures.forEach(pref => {
+                    const card = document.createElement('div');
+                    card.className = 'prefecture-card';
+                    card.style.borderLeftColor = pref.color;
+                    card.innerHTML = `
+                        <div class="prefecture-header">
+                            <div class="prefecture-name">${pref.name}</div>
+                            <div class="prefecture-code">${pref.code}</div>
+                        </div>
+                        ${pref.photo ? `<img src="${pref.photo}" class="prefecture-photo" alt="${pref.name}">` : 
+                          '<div class="prefecture-photo"><i class="fas fa-camera"></i> 暂无照片</div>'}
+                        ${pref.note ? `<div class="prefecture-note">${pref.note}</div>` : ''}
+                        <div style="margin-top: 10px; font-size: 0.85rem; color: #7f8c8d;">
+                            <i class="far fa-calendar"></i> ${pref.date || '未记录日期'}
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+            
+            updateStats() {
+                const stats = storageManager.getStats();
+                
+                document.getElementById('visitedCount').textContent = stats.visited;
+                document.getElementById('totalCount').textContent = stats.total;
+                document.getElementById('percentage').textContent = `${stats.percentage}%`;
+                document.getElementById('progressFill').style.width = `${stats.percentage}%`;
+            }
+            
+            resetMap() {
+                if (confirm('确定要重置所有数据吗？此操作不可撤销。')) {
+                    storageManager.resetData();
+                    
+                    japanPrefectures.forEach(pref => {
+                        if (this.prefectureLayers[pref.code]) {
+                            this.prefectureLayers[pref.code].setStyle({
+                                fillColor: "#bdc3c7",
+                                color: "#bdc3c7"
+                            });
+                        }
+                    });
+                    
+                    this.updateUI();
+                    this.showNotification('地图已重置');
+                }
+            }
+            
+            exportData() {
+                const data = storageManager.exportData();
+                FileManager.exportToFile(data, '日本旅行足迹.json');
+                this.showNotification('数据已导出');
+            }
+            
+            importData() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                
+                input.onchange = e => {
+                    const file = e.target.files[0];
+                    FileManager.importFromFile(file, (result) => {
+                        if (result.success) {
+                            const importResult = storageManager.importData(result.data);
+                            if (importResult.success) {
+                                const visitedPrefectures = storageManager.getVisitedPrefectures();
+                                visitedPrefectures.forEach(pref => {
+                                    this.updatePrefectureColor(pref.code, pref.color);
+                                });
+                                this.updateUI();
+                                this.showNotification('数据导入成功');
+                            } else {
+                                this.showNotification(importResult.error, 'error');
+                            }
+                        } else {
+                            this.showNotification(result.error, 'error');
+                        }
+                    });
+                };
+                
+                input.click();
+            }
+            
+            closeModal() {
+                document.getElementById('prefectureModal').style.display = 'none';
+                this.currentPrefecture = null;
+            }
+            
+            showNotification(message, type = 'success') {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.className = 'notification';
+                if (type === 'error') {
+                    notification.classList.add('error');
+                }
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+            
+            setupEventListeners() {
+                // 关闭模态框
+                document.querySelector('.close-modal').addEventListener('click', () => {
+                    this.closeModal();
+                });
+                
+                // 颜色选择
+                document.querySelectorAll('.color-option').forEach(option => {
+                    option.addEventListener('click', function() {
+                        document.querySelectorAll('.color-option').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                    });
+                });
+                
+                // 照片预览
+                document.getElementById('photoUpload').addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            const preview = document.getElementById('photoPreview');
+                            preview.src = event.target.result;
+                            preview.style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                
+                // 保存按钮
+                document.getElementById('savePrefectureBtn').addEventListener('click', () => {
+                    this.savePrefectureInfo();
+                });
+                
+                // 重置按钮
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.resetMap();
+                });
+                
+                // 导出按钮
+                document.getElementById('exportBtn').addEventListener('click', () => {
+                    this.exportData();
+                });
+                
+                // 导入按钮
+                document.getElementById('importBtn').addEventListener('click', () => {
+                    this.importData();
+                });
+                
+                // 点击模态框外部关闭
+                window.addEventListener('click', (event) => {
+                    const modal = document.getElementById('prefectureModal');
+                    if (event.target === modal) {
+                        this.closeModal();
+                    }
+                });
+                
+                // 初始化今天日期
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('visitDate').value = today;
+            }
+        }
+        
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', function() {
+            window.app = new JapanTravelMap();
+        });
+    </script>
+</body>
+</html>
